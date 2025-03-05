@@ -129,7 +129,13 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             The predicted labels (y_pred) for given X.
         """
-        pass
+        # dot product between inputs and weights, which are the coefficients for the logistic reg model
+        value = np.dot(X, self.W)
+
+        # convert linear model output into probabilities using sigmoid function
+        y_pred = 1/(1 + np.exp(-value))
+        return y_pred
+
     
     def loss_function(self, y_true, y_pred) -> float:
         """
@@ -143,7 +149,17 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             The mean loss (a single number).
         """
-        pass
+        if len(y_true) != len(y_pred):
+            raise ValueError("There must be the same number of actual labels and predicted labels")
+
+        #takes care of log(0) cases that are undefined. Y-pred must be within 1e-15 and 1-1e-15; 1e-15 used to avoid underflow issues
+        y_pred = np.clip(y_pred, 1e-15, 1 - 1e-15)
+
+        #implement cross-entropy function where the number of classes = 2
+        #when y_true = 1, loss primarily defined by log(y_pred)
+        #when y_true = 0, loss primarily defined by log(1-y_pred)
+        loss = -1/len(y_true) * (np.sum(y_true * np.log(y_pred) + (1 - y_true) * np.log(1 - y_pred)))
+        return loss
         
     def calculate_gradient(self, y_true, X) -> np.ndarray:
         """
@@ -157,4 +173,12 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             Vector of gradients.
         """
-        pass
+
+        #calculate the probabilities using the sigmoid function written earlier
+        y_pred = self.make_prediction(X)
+
+        #derivative of the cross entropy loss with respect to the weights
+        #y_pred - y_true is difference between predicted and actual labels
+        grad = 1/len(y_true) * np.dot(X.T, (y_pred-y_true))
+        return grad
+
